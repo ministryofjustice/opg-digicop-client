@@ -112,15 +112,10 @@ class FileCheckerFactory
     {
         // specific check to handle word X documents but not other files with same mime type
         $mimeType = $uploadedFile->getMimeType();
+        $extension = $uploadedFile->getExtension();
 
-        if (
-            // Old word docs
-            ('application/msword' == $mimeType && ('doc' == $uploadedFile->getExtension())) ||
-            // New word documents
-            (
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document' == $mimeType &&
-                ('docx' == $uploadedFile->getClientOriginalExtension() && ('' == $uploadedFile->getExtension()))
-            )
+        if (in_array($mimeType, ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']) &&
+            in_array($extension, ['doc'. 'docx', ''])
         ) {
             return true;
         }
