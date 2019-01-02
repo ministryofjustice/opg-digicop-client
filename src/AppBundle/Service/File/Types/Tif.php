@@ -6,9 +6,9 @@ use AppBundle\Service\File\Checker\ClamAVChecker;
 use AppBundle\Service\File\Checker\TifChecker;
 use Psr\Log\LoggerInterface;
 
-class Tif    extends UploadableFile
+class Tif extends UploadableFile
 {
-    protected $scannerEndpoint = 'upload/jpeg';
+    protected $scannerEndpoint = 'upload/scan-only';
 
     public function __construct(
         ClamAVChecker $virusChecker,
