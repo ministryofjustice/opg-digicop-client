@@ -55,7 +55,6 @@ class ClamAVChecker implements FileCheckerInterface
      */
     public function checkFile(UploadableFileInterface $file)
     {
-        return true;
         // POST body to clamAV
         $response = $this->getScanResults($file);
 
