@@ -51,6 +51,8 @@ services:
       - secretsmanager
       - postgres
       - sirius-api
+    links:
+      - file-scanner-api
     volumes:
       - ./app:/var/www/app
       - ./src:/var/www/src:ro
@@ -239,3 +241,35 @@ services:
     build:
       context: .
       dockerfile: docker/waitforit/Dockerfile
+
+  file-scanner-api:
+    container_name: file-scanner-api
+    build: ../opg-file-scanner-service
+    ports:
+      - 8443:8443
+    links:
+      - file-scanner-broker
+    volumes:
+      - ./log/api:/var/log
+    environment:
+      SERVICE_ENABLE_UWSGI: "yes"
+      SSL_CERT_FILENAME: "/etc/ssl/self-signed.crt"
+      SSL_KEY_FILENAME: "/etc/ssl/self-signed.key"
+      REDIS_URL: "redis://file-scanner-broker:6379/0"
+
+  file-scanner-worker:
+    container_name: file-scanner-worker
+    build: ../opg-file-scanner-service
+    links:
+      - file-scanner-broker
+    volumes:
+      - ./log/worker:/var/log
+    environment:
+      SERVICE_ENABLE_CELERY: "yes"
+      SERVICE_ENABLE_FRESHCLAM: "yes"
+      SERVICE_ENABLE_CLAMD: "yes"
+      REDIS_URL: "redis://file-scanner-broker:6379/0"
+
+  file-scanner-broker:
+    container_name: file-scanner-broker
+    image: redis:3.0.7-alpine
