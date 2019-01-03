@@ -8,7 +8,7 @@ use Psr\Log\LoggerInterface;
 
 class Png extends UploadableFile
 {
-    protected $scannerEndpoint = 'upload/scan-only';
+    protected $scannerEndpoint = 'upload/png/scanonly';
 
     public function __construct(
         ClamAVChecker $virusChecker,
