@@ -8,7 +8,7 @@ use Psr\Log\LoggerInterface;
 
 class Pdf extends UploadableFile
 {
-    protected $scannerEndpoint = 'upload/pdf/scanonly';
+    protected $scannerEndpoint = 'scanonly';
 
     public function __construct(
         ClamAVChecker $virusChecker,

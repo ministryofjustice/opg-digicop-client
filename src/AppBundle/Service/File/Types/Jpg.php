@@ -8,7 +8,7 @@ use Psr\Log\LoggerInterface;
 
 class Jpg extends UploadableFile
 {
-    protected $scannerEndpoint = 'upload/jpeg/scanonly';
+    protected $scannerEndpoint = 'scanonly';
 
     public function __construct(
         ClamAVChecker $virusChecker,

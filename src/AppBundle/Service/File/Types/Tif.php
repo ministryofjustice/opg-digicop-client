@@ -8,7 +8,7 @@ use Psr\Log\LoggerInterface;
 
 class Tif extends UploadableFile
 {
-    protected $scannerEndpoint = 'upload/tiff/scanonly';
+    protected $scannerEndpoint = 'scanonly';
 
     public function __construct(
         ClamAVChecker $virusChecker,
