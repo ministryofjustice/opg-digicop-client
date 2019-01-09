@@ -51,12 +51,12 @@ services:
       - secretsmanager
       - postgres
       - sirius-api
-    links:
       - file-scanner-api
     volumes:
       - ./app:/var/www/app
       - ./src:/var/www/src:ro
       - ./web:/var/www/web
+      - ./tests:/var/www/tests
     environment:
       APP_VERSION: 0-local-app
       WEB_VERSION: 0-local-web
@@ -244,7 +244,8 @@ services:
 
   file-scanner-api:
     container_name: file-scanner-api
-    build: ../opg-file-scanner-service
+#    build: ../opg-file-scanner-service
+    image: file-scanner-service:localbuild
     ports:
       - 8443:8443
     links:
@@ -259,7 +260,8 @@ services:
 
   file-scanner-worker:
     container_name: file-scanner-worker
-    build: ../opg-file-scanner-service
+#    build: ../opg-file-scanner-service
+    image: file-scanner-service:localbuild
     links:
       - file-scanner-broker
     volumes:
@@ -273,3 +275,4 @@ services:
   file-scanner-broker:
     container_name: file-scanner-broker
     image: redis:3.0.7-alpine
+

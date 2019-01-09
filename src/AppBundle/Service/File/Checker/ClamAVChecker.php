@@ -94,9 +94,9 @@ class ClamAVChecker implements FileCheckerInterface
     private function getScanResults(UploadableFileInterface $file)
     {
         // avoid contacting ClamAV for files with already-known asnwer
-        if ($cachedResponse = ClamAVMocks::getCachedResponse($file)) {
-            return $cachedResponse;
-        }
+//        if ($cachedResponse = ClamAVMocks::getCachedResponse($file)) {
+//            return $cachedResponse;
+//        }
 
         try {
             $result = $this->makeScannerRequest($file);
@@ -108,6 +108,7 @@ class ClamAVChecker implements FileCheckerInterface
             //TODO use $statusResponse['celery_task_state'] == 'SUCCESS' to verify
             while ((!array_key_exists('file_scanner_result', $statusResponse)) && ($count < $maxRetries)) {
                 $statusResponse = $this->makeStatusRequest($result['location']);
+                $this->log(Logger::ERROR, 'Status Response -> ' . var_export($statusResponse));
 
                 if ($statusResponse === false) {
                     $this->log(Logger::CRITICAL, 'Scanner response could not be decoded');
