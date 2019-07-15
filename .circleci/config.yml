@@ -55,13 +55,6 @@ jobs:
           name: Unit Test
           command: |
             ./generate_certs.sh
-
-            # Vendor php dependencies
-            docker-compose run --rm composer
-
-            # Removes boilerplate feature test added during Symfony Flex recipe for behat
-            rm -rf features/demo.feature
-
             docker-compose up --build -d loadbalancer
             docker-compose run --rm waitforit -address=tcp://loadbalancer:443 -debug -timeout 240
             docker-compose run --rm waitforit -address=tcp://postgres:5432 -debug
