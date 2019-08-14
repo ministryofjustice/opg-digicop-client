@@ -2,13 +2,16 @@
 
 namespace App\Behat;
 
-use Behat\Behat\Context\Context;
+use App\Controller\BehatController;
 use Behat\MinkExtension\Context\MinkContext;
+use Behat\Symfony2Extension\Context\KernelAwareContext;
+use Doctrine\ORM\EntityManager;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Behat context class.
  */
-class FeatureContext extends MinkContext implements Context
+class FeatureContext extends MinkContext
 {
     use RegionLinksTrait;
     use FormTrait;
@@ -45,14 +48,6 @@ class FeatureContext extends MinkContext implements Context
         $this->fillField('login_username', $user);
         $this->fillField('login_password', $password);
         $this->pressButton('login_submit');
-    }
-
-    /**
-     * @Given /^I am authenticated with username "([^"]*)" password "([^"]*)"$/
-     */
-    public function iAmAuthenticatedWith($user, $password)
-    {
-        $this->getSession()->setBasicAuth($user, $password);
     }
 
     /**

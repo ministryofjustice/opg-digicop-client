@@ -1,5 +1,8 @@
 default:
+    autoload:
+        '': "%paths.base%/bootstrap"
     suites:
+
         main:
             description: End to end journey
             paths:    [ "%paths.base%/features" ]
@@ -15,7 +18,10 @@ default:
                 tags: ~@excludeLocal
 
     extensions:
-        FriendsOfBehat\SymfonyExtension: ~
+        Behat\Symfony2Extension:
+              kernel:
+                bootstrap: features/bootstrap/bootstrap.php
+                class: App\Kernel
         Behat\MinkExtension\ServiceContainer\MinkExtension:
               goutte:
                   guzzle_parameters:
