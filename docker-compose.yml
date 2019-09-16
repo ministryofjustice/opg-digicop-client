@@ -80,7 +80,7 @@ services:
       - /tmp/api.public.v1.yaml
 
   localstack:
-    image: localstack/localstack:0.9.1
+    image: localstack/localstack:0.10.3
     environment:
       - SERVICES=s3:4572,dynamodb:4569
       - DATA_DIR=/tmp/localstack/data
