@@ -1,5 +1,10 @@
 version: 2.1
 
+parameters:
+  run_legacy_pipeline:
+    type: boolean
+    default: false
+
 orbs:
   dockerhub_helper:
     orbs:
@@ -146,6 +151,7 @@ jobs:
 workflows:
   version: 2
   build:
+    when: << pipeline.parameters.run_legacy_pipeline >>
     jobs:
       - test:
           filters: { branches: { ignore: [master] } }

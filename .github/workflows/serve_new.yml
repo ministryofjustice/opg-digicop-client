@@ -1,0 +1,38 @@
+name: CI
+on:
+  push:
+    branches: [ SER-4 ]
+  pull_request:
+    branches: [ SER-4 ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: show some vars
+        run: |
+          echo running on branch ${GITHUB_REF##*/}
+          echo ${{ github.ref }}
+
+      - name: check branch
+        id: check-branch
+        run: |
+          if [[ ${{ github.ref }} =~ ^refs/heads/SER-[0-9]* ]]; then
+              echo ::set-output name=new::true
+          elif [[ ${{ github.ref }} =~ ^refs/heads/DDPB-[0-9]* ]]; then
+              echo ::set-output name=old::true
+          fi
+
+      - name: Do some new stuff
+        if: steps.check-branch.outputs.new == 'true'
+        run: |
+          echo "Branch is SER"
+
+      - name: Kick off old workflow
+        if: steps.check-branch.outputs.old == 'true'
+        run: |
+          echo "Branch is DDPB"
