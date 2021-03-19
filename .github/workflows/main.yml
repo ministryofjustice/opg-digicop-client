@@ -1,0 +1,212 @@
+name: Main
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  select_project:
+    runs-on: ubuntu-latest
+    outputs:
+      new_project: ${{ steps.check-branch.outputs.new }}
+      old_project: ${{ steps.check-branch.outputs.old }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: check branch
+        id: check-branch
+        run: |
+          if [[ ${{ github.ref }} =~ ^refs/heads/SER-[0-9]* ]]; then
+              echo ::set-output name=new::true
+          elif [[ ${{ github.ref }} =~ ^refs/heads/DDPB-[0-9]* ]]; then
+              echo ::set-output name=old::true
+          else
+            echo "Please use a SER or DDPB prefix for your branch name!"
+            exit 1
+          fi
+          echo $WORKSPACE
+
+  cancel_redundant_builds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel redundant builds
+        id: check-branch
+        run: echo "Cancelling redundant builds"
+
+  build_and_test:
+    runs-on: ubuntu-latest
+    needs: [cancel_redundant_builds, select_project]
+    if: needs.select_project.outputs.new_project == 'true'
+    env:
+      working-directory: ./_serve-opg-new
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        id: cache
+        with:
+          path: ./_serve-opg-new/
+          key: ${{ runner.os }}-${{ hashFiles('**/*.lock') }}
+      - name: Prepare localstack
+        working-directory: ${{env.working-directory}}
+        run: echo "Running prepare localstack"
+      - name: Create dependencies
+        working-directory: ${{env.working-directory}}
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: echo "Running create dependencies"
+      - name: Build
+        working-directory: ${{env.working-directory}}
+        run: echo "Building and pushing to ECR"
+      - name: Unit test PHP
+        working-directory: ${{env.working-directory}}
+        run: echo "Running PHP unit tests"
+      - name: Unit tests Golang
+        working-directory: ${{env.working-directory}}
+        run: echo "Running Go tests"
+      - name: Push to ECR
+        working-directory: ${{env.working-directory}}
+        run: echo "pushing to ECR"
+
+  build_infrastructure_shared_development:
+    runs-on: ubuntu-latest
+    needs: [build_and_test]
+    if: needs.select_project.outputs.new_project == 'true'
+    env:
+      working-directory: ./_serve-opg-new/terraform/shared
+      tf_workspace: development
+    steps:
+      - uses: actions/checkout@v2
+      - name: Plan terraform shared
+        working-directory: ${{env.working-directory}}
+        run: echo "planning terraform on branch"
+      - name: Apply terraform shared
+        working-directory: ${{env.working-directory}}
+        run: echo "applying terraform on branch"
+
+  build_infrastructure_development:
+    runs-on: ubuntu-latest
+    needs: [build_infrastructure_shared_development]
+    if: needs.select_project.outputs.new_project == 'true'
+    env:
+      working-directory: ./_serve-opg-new/terraform/environment
+      tf_workspace: development
+    steps:
+      - uses: actions/checkout@v2
+      - name: Plan terraform environment
+        working-directory: ${{env.working-directory}}
+        run: echo "planning terraform on branch"
+      - name: Apply terraform environment
+        working-directory: ${{env.working-directory}}
+        run: echo "applying terraform on branch"
+
+  integration_tests:
+    runs-on: ubuntu-latest
+    needs: [build_infrastructure_development]
+    if: needs.select_project.outputs.new_project == 'true'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Integration tests
+        working-directory: ./_serve-opg-new/terraform/environment
+        run: echo "running integration tests against development env"
+
+  build_infrastructure_shared_preproduction:
+    runs-on: ubuntu-latest
+    needs: [integration_tests]
+    if: needs.select_project.outputs.new_project == 'true'
+    env:
+      working-directory: ./_serve-opg-new/terraform/shared
+      tf_workspace: preproduction
+    steps:
+      - uses: actions/checkout@v2
+      - name: Plan terraform shared
+        working-directory: ${{env.working-directory}}
+        run: echo "planning terraform on branch"
+      - name: Apply terraform shared
+        working-directory: ${{env.working-directory}}
+        run: echo "applying terraform on branch"
+
+  build_infrastructure_preproduction:
+    runs-on: ubuntu-latest
+    needs: [build_infrastructure_shared_preproduction]
+    if: needs.select_project.outputs.new_project == 'true'
+    env:
+      working-directory: ./_serve-opg-new/terraform/environment
+      tf_workspace: preproduction
+    steps:
+      - uses: actions/checkout@v2
+      - name: Plan terraform environment
+        working-directory: ${{env.working-directory}}
+        run: echo "planning terraform on branch"
+      - name: Apply terraform environment
+        working-directory: ${{env.working-directory}}
+        run: echo "applying terraform on branch"
+      - name: Notify slack
+        run: echo "Notifying slack"
+
+  build_infrastructure_shared_production:
+    runs-on: ubuntu-latest
+    needs: [build_infrastructure_preproduction]
+    if: needs.select_project.outputs.new_project == 'true'
+    environment:
+      name: production
+    env:
+      working-directory: ./_serve-opg-new/terraform/shared
+      tf_workspace: production
+    steps:
+      - uses: actions/checkout@v2
+      - name: Plan terraform environment
+        working-directory: ${{env.working-directory}}
+        run: echo "planning terraform on production"
+      - name: Apply terraform environment
+        working-directory: ${{env.working-directory}}
+        run: echo "applying terraform on production"
+
+  build_infrastructure_production:
+    runs-on: ubuntu-latest
+    needs: [build_infrastructure_preproduction]
+    if: needs.select_project.outputs.new_project == 'true'
+    environment:
+      name: production
+    env:
+      working-directory: ./_serve-opg-new/terraform/environment
+      tf_workspace: production
+    steps:
+      - uses: actions/checkout@v2
+      - name: Plan terraform environment
+        working-directory: ${{env.working-directory}}
+        run: echo "planning terraform on production"
+      - name: Apply terraform environment
+        working-directory: ${{env.working-directory}}
+        run: echo "applying terraform on production"
+
+  post_deploy_steps:
+    runs-on: ubuntu-latest
+    needs: [build_infrastructure_preproduction]
+    if: needs.select_project.outputs.new_project == 'true'
+    environment:
+      name: production
+    env:
+      working-directory: ./_serve-opg-new/terraform/environment
+    steps:
+      - uses: actions/checkout@v2
+      - name: Smoke test production
+        working-directory: ${{env.working-directory}}
+        run: |
+          echo "running smoke test on production"
+          echo ::set-output name=smoke_success::true
+      - name: Notify slack
+        working-directory: ${{env.working-directory}}
+        run: echo "we will use https://github.com/marketplace/actions/slack-notify-build"
+      - name: Create release
+        run: echo "creating release in github"
+      - name: Rollback
+        run: echo "some sort of rollback logic around here..."
+
+  kick_off_old_wf:
+    runs-on: ubuntu-latest
+    needs: [cancel_redundant_builds, select_project]
+    if: needs.select_project.outputs.old_project == 'true'
+    steps:
+      - name: Kick off old workflow
+        run: echo "kick off old workflow"

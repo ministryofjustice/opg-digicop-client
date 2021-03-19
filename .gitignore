@@ -51,3 +51,6 @@ localstack-data
 ###< friends-of-behat/symfony-extension ###
 
 **src/Migrations/Version*
+
+### Terraform ###
+**/.terraform/
